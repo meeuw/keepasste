@@ -1,0 +1,6 @@
+[database]
+filename = "/home/user/Documents/passwords.kdbx"
+password = "a2V5cGFzc3RlMQ=="
+
+[mappings]
+"example.com" = "/example.com/user"
