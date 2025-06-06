@@ -3,13 +3,39 @@ import tomllib
 import base64
 import os.path
 import sys
+import urllib.parse
+import re
 
 
 def main():
-    pasted = subprocess.check_output(["wl-paste", "--primary"], encoding="utf8")[:-1]
+    try:
+        pasted = subprocess.check_output(["wl-paste", "--primary"], encoding="utf8")[:-1]
+    except subprocess.CalledProcessError:
+        print("wl-pasted did't exit correctly")
+        sys.exit(1)
     with open(os.path.expanduser("~/.config/keepasste/config.toml"), "rb") as f:
         config = tomllib.load(f)
-    key = config["mappings"][pasted]
+
+    key = None
+    for fn in (
+        lambda pasted: pasted,
+        lambda pasted: urllib.parse.urlparse(pasted).netloc,
+        lambda pasted: re.sub("/.*", "", pasted),
+    ):
+        needle = fn(pasted)
+
+        if needle in config["mappings"]:
+            key = config["mappings"][needle]
+            break
+
+        sld_tld = ".".join(needle.split(".")[-2:])
+        if sld_tld in config["mappings"]:
+            key = config["mappings"][sld_tld]
+            break
+
+    if key is None:
+        print(f"Cannot find {pasted} in ~/.config/keepasste/config.toml")
+        sys.exit(1)
 
     p = subprocess.Popen(
         [
@@ -30,9 +56,5 @@ def main():
     )[0][:-1]
 
     subprocess.check_call(
-        [
-            "sudo",
-            "/usr/bin/injectinput",
-            value.replace("\\", "\\\\") + "\\r"
-        ]
+        ["sudo", "/usr/bin/injectinput", value.replace("\\", "\\\\") + "\\r"]
     )

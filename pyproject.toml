@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keepasste"
-version = "0.1.1"
+version = "0.2.0"
 description = ""
 authors = ["Dick Marinus"]
 license = "GPL-3.0"
